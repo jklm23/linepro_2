@@ -1,5 +1,5 @@
 
-
+import math
 import numpy as np
 def golden_section(f, section, delta,flag=1):
     '''
@@ -439,6 +439,68 @@ def con_gra(x,grad,f,Q,eps):
     print('目标函数值变化:' + str(f_res))
 
     return f_res[-1]
+
+def momentum_gd(x,gradf,lr,momentum,eps,f):
+    '''
+    带动量的梯度下降
+    :param x:
+    :param gradf:
+    :param lr: 学习率
+    :param momentum: 动量
+    :return:
+    '''
+
+    x_list=[str(x)]
+    f_list=[str(f(x))]
+    v=np.zeros(x.shape) # 初始变化量为0
+    while np.linalg.norm(gradf(x),ord=1)>eps:
+        v=momentum*v+lr*gradf(x)
+        x-=v
+        # print(x)
+        # print(np.linalg.norm(gradf(x),ord=1))
+        x_list.append(str(x))
+        f_list.append(str(f(x)))
+    return x_list,f_list
+
+def sqrt_arr(x):
+    '''
+    array的每个元素进行运算
+    :param x:
+    :return:
+    '''
+    return math.sqrt(x)
+
+def one_(x):
+    return 1/x
+
+
+def adagrad(x,gradf,lr,mineps,eps,f):
+    '''
+
+    :param x:
+    :param gradf:
+    :param lr:
+    :param mineps: 防止分母为0
+    :param f:
+    :return:
+    '''
+    x_list = [str(x)]
+    f_list = [str(f(x))]
+    n=np.zeros(x.shape)
+    while np.linalg.norm(gradf(x), ord=1) > eps:
+        n+=gradf(x)*gradf(x)
+
+        tmp=n+mineps
+        tmp=np.array(list(map(sqrt_arr,tmp)))
+        tmp = np.array(list(map(one_, tmp)))
+        tmp*=gradf(x)
+
+        delta=-lr*tmp
+        x+=delta
+        # print(x)
+        x_list.append(str(x))
+        f_list.append(str(f(x)))
+    return x_list,f_list
 
 if __name__ == '__main__':
     x=np.array([0.1,1.])
