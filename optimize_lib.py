@@ -324,7 +324,7 @@ def quasi_Newton(x,eps,gradf,f,hfunc,**lists):
         # 使用黄金分割法确定步长
         lam = golden_section(f_lambda, [-100, 100], 0.03,flag=0)
         x_next=x+lam*d
-        if abs(np.linalg.norm(gradf(x_next)))<=eps:
+        if abs(np.linalg.norm(gradf(x_next),ord=1))<=eps:
             x=x_next
             break
         if k==n:
@@ -351,7 +351,7 @@ def quasi_Newton(x,eps,gradf,f,hfunc,**lists):
             k+=1
 
             lists['x_list'].append(x_next)
-            # lists['grad_list'].append(gradf(x_next))
+            lists['grad_list'].append(gradf(x_next))
             # lists['H_list'].append(H)
             # lists['d_list'].append(d)
             # lists['lambda_list'].append(lam)
@@ -369,7 +369,76 @@ def quasi_Newton(x,eps,gradf,f,hfunc,**lists):
               # str(lists['d_list'][i])+'  '+
               # str(lists['lambda_list'][i])
               )
+    print('梯度变化：')
+    for i in range(len(lists['x_list'])):
+        print(gradf(lists['x_list'][i]))
     return x
+
+def con_gra(x,grad,f,Q,eps):
+    '''
+    共轭梯度法
+    :param x:
+    :param grad:
+    :param f:
+    :param Q: 正定矩阵
+    :return:
+    '''
+    def lam(p, Q, x):
+        '''
+        步长因子
+        :param p:
+        :param Q:
+        :return:
+        '''
+        return -float(np.dot(p.T, grad(x))) / float(np.dot(np.dot(p.T, Q), p))
+
+    def direction(p, Q, x):
+        '''
+        共轭方向的计算
+        :param p:
+        :param x:
+        :return:
+        '''
+        return -grad(x) + float((p.T.dot(Q).dot(grad(x))) / (p.T.dot(Q).dot(p))) * p
+
+    gradi = grad(x)  # 初始梯度
+    p_i = gradi  # 初始方向
+    print('初始方向：'+str(p_i))
+    lambda_i = float(lam(p_i, Q, x))
+    p_i_res = [p_i]
+    lambda_i_res = [lambda_i]
+    f_res = [f(x)]
+    x1 = [x[0][0]]
+    x2 = [x[1][0]]
+
+    while abs(np.linalg.norm(gradi, ord=1)) > eps:  # ord=1代表1范数
+        # print('lambda_i:'+str(lambda_i))
+        # print('p_i:'+str(p_i))
+        x += lambda_i * p_i
+        # print('x:'+str(x))
+        # print('新梯度：'+str(grad(x)))
+        gradi = grad(x)
+        f_res.append(f(x))
+        x1.append(x[0][0])
+        x2.append(x[1][0])
+        if abs(np.linalg.norm(gradi, ord=1)) <= eps:
+            # 新梯度超过eps，终止
+            break
+
+        p_i = direction(p_i, Q, x)
+        lambda_i = float(lam(p_i, Q, x))
+        lambda_i_res.append(lambda_i)
+        p_i_res.append(p_i)
+        # print('-----')
+    print('-------')
+    print('步长因子变化：' + str(lambda_i_res))
+    print('方向变化:' + str(p_i_res))
+    print('迭代点：')
+    for i in range(len(x1)):
+        print('(%f,%f)'%(x1[i],x2[i]))
+    print('目标函数值变化:' + str(f_res))
+
+    return f_res[-1]
 
 if __name__ == '__main__':
     x=np.array([0.1,1.])
